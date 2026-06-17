@@ -26,7 +26,7 @@ model Portfolio {
 
   title       String
   slug        String   @unique
-
+  template String @default("developer")
   data        Json
 
   published   Boolean  @default(false)

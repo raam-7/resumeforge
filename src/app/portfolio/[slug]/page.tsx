@@ -23,7 +23,7 @@ export default async function PortfolioPage({
     <main className="max-w-6xl mx-auto px-6 py-16">
       {/* HERO */}
       <section className="mb-20">
-        <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 rounded-3xl border border-zinc-700 p-12">
+        <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 rounded-3xl border border-zinc-700 p-10">
           <h1 className="text-white text-6xl md:text-7xl font-extrabold tracking-tight">
             {data.personalInfo?.fullName}
           </h1>

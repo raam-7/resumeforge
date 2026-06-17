@@ -18,6 +18,10 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
 
+    const template =
+  formData.get("template")?.toString() ||
+  "developer";
+
     const file = formData.get("file");
 
     if (!file || !(file instanceof File)) {
@@ -112,16 +116,16 @@ export async function POST(request: Request) {
     // TEMP user id
     const userId =
       "cmqgwvi7h0000f8ucupr7jvk8";
-
-    const portfolio =
-      await prisma.portfolio.create({
-        data: {
-          title: `${fullName} Portfolio`,
-          slug,
-          data: portfolioData,
-          userId,
-        },
-      });
+const portfolio =
+  await prisma.portfolio.create({
+    data: {
+      title: `${fullName} Portfolio`,
+      slug,
+      template,
+      data: portfolioData,
+      userId,
+    },
+  });
 
     return NextResponse.json({
       success: true,

@@ -21,11 +21,9 @@ export default async function PortfolioPage({
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-16">
-
       {/* HERO */}
       <section className="mb-20">
         <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 rounded-3xl border border-zinc-700 p-12">
-
           <h1 className="text-white text-6xl md:text-7xl font-extrabold tracking-tight">
             {data.personalInfo?.fullName}
           </h1>
@@ -38,15 +36,24 @@ export default async function PortfolioPage({
 
           <div className="mt-8 flex flex-wrap gap-6 text-zinc-300">
             {data.personalInfo?.location && (
-              <span>📍 {data.personalInfo.location}</span>
+              <div className="flex items-center gap-2">
+                <span>📍</span>
+                <span>{data.personalInfo.location}</span>
+              </div>
             )}
 
             {data.personalInfo?.phone && (
-              <span>📞 {data.personalInfo.phone}</span>
+              <div className="flex items-center gap-2">
+                <span>📞</span>
+                <span>{data.personalInfo.phone}</span>
+              </div>
             )}
 
             {data.personalInfo?.email && (
-              <span>✉️ {data.personalInfo.email}</span>
+              <div className="flex items-center gap-2">
+                <span>✉️</span>
+                <span>{data.personalInfo.email}</span>
+              </div>
             )}
           </div>
 
@@ -75,9 +82,7 @@ export default async function PortfolioPage({
       {/* SKILLS */}
       {data.skills?.length > 0 && (
         <section className="mb-20">
-          <h2 className="text-4xl font-bold mb-8">
-            Skills
-          </h2>
+          <h2 className="text-4xl font-bold mb-8">Skills</h2>
 
           <div className="flex flex-wrap gap-4">
             {data.skills.map((skill: any, index: number) => (
@@ -95,15 +100,13 @@ export default async function PortfolioPage({
       {/* PROJECTS */}
       {data.projects?.length > 0 && (
         <section className="mb-20">
-          <h2 className="text-4xl font-bold mb-8">
-            Projects
-          </h2>
+          <h2 className="text-4xl font-bold mb-8">Projects</h2>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 items-stretch">
             {data.projects.map((project: any, index: number) => (
               <div
                 key={index}
-                className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 shadow-xl hover:-translate-y-1 hover:border-zinc-600 transition-all"
+                className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 shadow-xl hover:-translate-y-1 hover:border-zinc-600 transition-all flex flex-col h-full"
               >
                 <h3 className="text-2xl font-semibold">
                   {project.title}
@@ -114,7 +117,7 @@ export default async function PortfolioPage({
                 </p>
 
                 {project.technologies?.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-5">
+                  <div className="flex flex-wrap gap-2 mt-auto pt-5">
                     {project.technologies.map(
                       (tech: string, techIndex: number) => (
                         <span
@@ -137,7 +140,7 @@ export default async function PortfolioPage({
       {data.education?.length > 0 && (
         <section className="mb-20">
           <h2 className="text-4xl font-bold mb-8">
-            Education
+            🎓 Education
           </h2>
 
           <div className="space-y-5">
@@ -170,7 +173,7 @@ export default async function PortfolioPage({
       {data.certifications?.length > 0 && (
         <section className="mb-20">
           <h2 className="text-4xl font-bold mb-8">
-            Certifications
+            🏆 Certifications
           </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
@@ -189,29 +192,31 @@ export default async function PortfolioPage({
       )}
 
       {/* CONNECT */}
-      {data.socialLinks?.length > 0 && (
-        <section>
-          <h2 className="text-4xl font-bold mb-8">
-            Connect
-          </h2>
+      <section>
+        <h2 className="text-4xl font-bold mb-8">
+          🔗 Connect
+        </h2>
 
-          <div className="flex flex-wrap gap-4">
-            {data.socialLinks.map(
-              (social: any, index: number) => (
-                <a
-                  key={index}
-                  href={social.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-5 py-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 transition"
-                >
-                  {social.platform}
-                </a>
-              )
-            )}
-          </div>
-        </section>
-      )}
+        <div className="flex flex-wrap gap-4">
+          <a
+            href="https://github.com/raam-7"
+            target="_blank"
+            rel="noreferrer"
+            className="px-5 py-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 transition"
+          >
+            GitHub
+          </a>
+
+          <a
+            href="https://linkedin.com/in/raambhanushali"
+            target="_blank"
+            rel="noreferrer"
+            className="px-5 py-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 transition"
+          >
+            LinkedIn
+          </a>
+        </div>
+      </section>
     </main>
   );
 }

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-
+import { repairPortfolioData } from "@/lib/ollama/repair";
 import { extractResumeText } from "@/lib/resume/extract";
 import { parseResumeWithOllama } from "@/lib/ollama/parser";
 import { validatePortfolioData } from "@/lib/ollama/validate";
+import { parseSkillsWithOllama } from "@/lib/ollama/skills-parser";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -68,8 +69,25 @@ export async function POST(request: Request) {
     }
 
     // Step 4: Validate structure
-    const portfolioData =
-      validatePortfolioData(parsedData);
+   const portfolioData =
+  repairPortfolioData(
+    validatePortfolioData(
+      parsedData
+    )
+  );
+
+  const extractedSkills =
+  await parseSkillsWithOllama(
+    resumeText.slice(0, 1500)
+  );
+
+if (
+  Array.isArray(extractedSkills) &&
+  extractedSkills.length > 0
+) {
+  portfolioData.skills =
+    extractedSkills;
+}
 
     return NextResponse.json({
       success: true,

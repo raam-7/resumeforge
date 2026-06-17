@@ -1,40 +1,36 @@
-"use client";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import Link from "next/link";
 
-export default function UploadPage() {
-  async function handleUpload(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
-    alert("File selected");
+export default async function DashboardPage() {
+  const session = await auth();
 
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      alert("No file found");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    alert(JSON.stringify(data));
+  if (!session?.user) {
+    redirect("/api/auth/signin");
   }
 
   return (
     <main className="min-h-screen p-8">
-      <h1>Upload Resume</h1>
+      <h1 className="text-3xl font-bold">
+        ResumeForge Dashboard
+      </h1>
 
-      <input
-        type="file"
-        accept=".pdf,.doc,.docx"
-        onChange={handleUpload}
-      />
+      <div className="mt-6 rounded-lg border p-4">
+        <p>Logged in as:</p>
+
+        <p className="font-medium">
+          {session.user.email}
+        </p>
+      </div>
+
+      <div className="mt-8">
+        <Link
+          href="/dashboard/ai-test"
+          className="rounded-lg border px-4 py-2 inline-block"
+        >
+          Generate Portfolio
+        </Link>
+      </div>
     </main>
   );
 }

@@ -22,22 +22,22 @@ createdAt  DateTime @default(now())
 }
 
 model Portfolio {
-id         String   @id @default(cuid())
+  id          String   @id @default(cuid())
 
-title      String
-slug       String   @unique
-theme      String
+  title       String
+  slug        String   @unique
 
-data       Json
+  data        Json
 
-published  Boolean  @default(false)
+  published   Boolean  @default(false)
 
-userId     String
-user       User     @relation(fields: [userId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
 
-createdAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-@@index([userId])
+  @@index([userId])
 }
 
 model Account {

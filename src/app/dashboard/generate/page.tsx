@@ -1,54 +1,67 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function GeneratePage() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
+  const router = useRouter();
+async function handleGenerate() {
+  if (!file) {
+    alert("Please select a resume first.");
+    return;
+  }
 
-  async function handleGenerate() {
-    if (!file) {
-      alert("Please select a resume first.");
+  setLoading(true);
+  setResult("");
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(
+      "/api/parse-resume",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    if (
+      data.success &&
+      data.slug
+    ) {
+      router.push(
+        `/portfolio/${data.slug}`
+      );
+
       return;
     }
 
-    setLoading(true);
-    setResult("");
+    setResult(
+      JSON.stringify(data, null, 2)
+    );
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+  } catch (error) {
+    console.error(error);
 
-      const response = await fetch(
-        "/api/parse-resume",
+    setResult(
+      JSON.stringify(
         {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      setResult(
-        JSON.stringify(data, null, 2)
-      );
-    } catch (error) {
-      console.error(error);
-
-      setResult(
-        JSON.stringify(
-          {
-            error: "Failed to generate portfolio",
-          },
-          null,
-          2
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
+          error: "Failed to generate portfolio",
+        },
+        null,
+        2
+      )
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <main className="min-h-screen p-8">

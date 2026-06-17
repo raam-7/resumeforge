@@ -4,6 +4,8 @@ import { extractResumeText } from "@/lib/resume/extract";
 import { parseResumeWithOllama } from "@/lib/ollama/parser";
 import { validatePortfolioData } from "@/lib/ollama/validate";
 import { parseSkillsWithOllama } from "@/lib/ollama/skills-parser";
+import { prisma } from "@/lib/prisma";
+import { generateSlug } from "@/lib/portfolio/generateSlug";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -43,15 +45,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Step 1: Extract text
+    // Extract resume text
     const resumeText = await extractResumeText(file);
 
-    // Step 2: Send to Ollama
+    // Parse portfolio
     const aiResponse = await parseResumeWithOllama(
       resumeText
     );
 
-    // Step 3: Parse JSON
     let parsedData;
 
     try {
@@ -68,29 +69,64 @@ export async function POST(request: Request) {
       );
     }
 
-    // Step 4: Validate structure
-   const portfolioData =
-  repairPortfolioData(
-    validatePortfolioData(
-      parsedData
-    )
-  );
+    // Validate + Repair
+    const portfolioData =
+      repairPortfolioData(
+        validatePortfolioData(parsedData)
+      );
 
-  const extractedSkills =
-  await parseSkillsWithOllama(
-    resumeText.slice(0, 1500)
-  );
+    // Extract skills separately
+    const extractedSkills =
+      await parseSkillsWithOllama(
+        resumeText.slice(0, 1500)
+      );
 
-if (
-  Array.isArray(extractedSkills) &&
-  extractedSkills.length > 0
-) {
-  portfolioData.skills =
-    extractedSkills;
-}
+    if (
+      Array.isArray(extractedSkills) &&
+      extractedSkills.length > 0
+    ) {
+      portfolioData.skills =
+        extractedSkills;
+    }
+
+    const fullName =
+      portfolioData.personalInfo.fullName ||
+      "portfolio";
+
+    // Generate unique slug
+    const baseSlug =
+      generateSlug(fullName);
+
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (
+      await prisma.portfolio.findUnique({
+        where: { slug },
+      })
+    ) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    // TEMP user id
+    const userId =
+      "cmqgwvi7h0000f8ucupr7jvk8";
+
+    const portfolio =
+      await prisma.portfolio.create({
+        data: {
+          title: `${fullName} Portfolio`,
+          slug,
+          data: portfolioData,
+          userId,
+        },
+      });
 
     return NextResponse.json({
       success: true,
+      slug: portfolio.slug,
+      portfolioId: portfolio.id,
       portfolioData,
     });
   } catch (error) {

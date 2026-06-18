@@ -93,6 +93,10 @@ formData.append("template", template);
   <option value="corporate">
     Corporate Template
   </option>
+
+  <option value="ai">
+  AI Neon
+</option>
 </select>
         <input
           type="file"

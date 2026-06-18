@@ -83,3 +83,8 @@ expires    DateTime
 
 @@unique([identifier, token])
 }
+model PortfolioView {
+  id          String @id @default(cuid())
+  portfolioId String
+  createdAt   DateTime @default(now())
+}

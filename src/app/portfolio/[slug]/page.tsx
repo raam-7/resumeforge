@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import DeveloperTemplate from "@/components/templates/DeveloperTemplate";
 import ModernTemplate from "@/components/templates/ModernTemplate";
 import CorporateTemplate from "@/components/templates/CorporateTemplate";
-
+import AITheme from "@/components/templates/AITheme";
 export default async function PortfolioPage({
   params,
 }: {
@@ -39,7 +39,13 @@ if (template === "corporate") {
     />
   );
 }
-
+if (template === "ai") {
+  return (
+    <AITheme
+      data={data}
+    />
+  );
+}
 return (
   <DeveloperTemplate
     data={data}

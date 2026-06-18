@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function GeneratePage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState("");
+const [file, setFile] = useState<File | null>(null);
+const [loading, setLoading] = useState(false);
+const [result, setResult] = useState("");
+const [template, setTemplate] = useState("developer");
   const router = useRouter();
 async function handleGenerate() {
   if (!file) {
@@ -18,8 +19,9 @@ async function handleGenerate() {
   setResult("");
 
   try {
-    const formData = new FormData();
-    formData.append("file", file);
+const formData = new FormData();
+formData.append("file", file);
+formData.append("template", template);
 
     const response = await fetch(
       "/api/parse-resume",
@@ -74,6 +76,24 @@ async function handleGenerate() {
       </p>
 
       <div className="mt-8 space-y-4">
+        
+        <select
+  value={template}
+  onChange={(e) => setTemplate(e.target.value)}
+  className="border rounded px-3 py-2"
+>
+  <option value="developer">
+    Developer Template
+  </option>
+
+  <option value="modern">
+    Modern Template
+  </option>
+
+  <option value="corporate">
+    Corporate Template
+  </option>
+</select>
         <input
           type="file"
           accept=".pdf,.doc,.docx"
@@ -81,6 +101,7 @@ async function handleGenerate() {
             setFile(e.target.files?.[0] ?? null)
           }
         />
+        
 
         <button
           onClick={handleGenerate}

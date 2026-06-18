@@ -135,14 +135,17 @@ const portfolio =
     });
   } catch (error) {
     console.error(error);
-
-    return NextResponse.json(
-      {
-        error: "Resume parsing failed",
-      },
-      {
-        status: 500,
-      }
-    );
+return NextResponse.json(
+  {
+    error: "Resume parsing failed",
+    details:
+      error instanceof Error
+        ? error.message
+        : String(error),
+  },
+  {
+    status: 500,
+  }
+);
   }
 }

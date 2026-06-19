@@ -16,6 +16,22 @@ export default async function PortfolioPage({
     where: { slug },
   });
 
+  if (portfolio) {
+  await prisma.portfolioView.create({
+    data: {
+      portfolioId: portfolio.id,
+    },
+  });
+}
+
+const totalViews = portfolio
+  ? await prisma.portfolioView.count({
+      where: {
+        portfolioId: portfolio.id,
+      },
+    })
+  : 0;  
+
   if (!portfolio) {
     notFound();
   }
@@ -27,8 +43,9 @@ export default async function PortfolioPage({
  if (template === "modern") {
   return (
     <ModernTemplate
-      data={data}
-    />
+  data={data}
+  views={totalViews}
+/>
   );
 }
 
@@ -42,14 +59,16 @@ if (template === "corporate") {
 if (template === "ai") {
   return (
     <AITheme
-      data={data}
-    />
+  data={data}
+  views={totalViews}
+/>
   );
 }
 return (
   <DeveloperTemplate
-    data={data}
-  />
+  data={data}
+  views={totalViews}
+/>
 );
 }
 

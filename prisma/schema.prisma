@@ -29,6 +29,8 @@ model Portfolio {
   template String @default("developer")
   data        Json
 
+views PortfolioView[]
+
   published   Boolean  @default(false)
 
   userId      String
@@ -84,7 +86,10 @@ expires    DateTime
 @@unique([identifier, token])
 }
 model PortfolioView {
-  id          String @id @default(cuid())
+  id          String    @id @default(cuid())
+
   portfolioId String
-  createdAt   DateTime @default(now())
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+
+  createdAt   DateTime  @default(now())
 }

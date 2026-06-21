@@ -91,5 +91,7 @@ model PortfolioView {
   portfolioId String
   portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
 
-  createdAt   DateTime  @default(now())
+  viewedAt    DateTime  @default(now())
+
+  @@index([portfolioId])
 }

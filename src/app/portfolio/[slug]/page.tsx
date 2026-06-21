@@ -33,9 +33,12 @@ const totalViews = portfolio
   : 0;  
 
   if (!portfolio) {
-    notFound();
-  }
-
+    notFound();}
+//   await prisma.portfolioView.create({
+//   data: {
+//     portfolioId: portfolio.id,
+//   },
+// });
   const data = portfolio.data as any;
 
   const template =

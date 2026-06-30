@@ -26,6 +26,7 @@
     "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-parallax-tilt": "^1.7.333",
     "react-tsparticles": "^2.12.2",
     "react-type-animation": "^3.2.0",
     "recharts": "^3.8.1",

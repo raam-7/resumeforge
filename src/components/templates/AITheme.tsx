@@ -7,6 +7,7 @@ import HeroTyping from "@/components/HeroTyping";
 import BootLoader from "@/components/BootLoader";
 import MouseGlow from "@/components/MouseGlow";
 import FloatingOrbs from "@/components/FloatingOrbs"; 
+import ProjectCard from "@/components/ProjectCard";
 export default function AITheme({
   data,
   views,
@@ -196,27 +197,14 @@ export default function AITheme({
                 Featured Projects
               </h2>
 
-              <div className="grid gap-6">
-                {data.projects?.map(
-                  (project: any, index: number) => (
-                    <motion.div
-                      key={index}
-                      whileHover={{
-                        y: -10,
-                      }}
-                      className="bg-black border border-zinc-700 rounded-3xl p-6 transition-all hover:border-cyan-400 hover:shadow-[0_0_35px_rgba(34,211,238,0.25)]"
-                    >
-                      <h3 className="text-2xl font-bold">
-                        {project.title}
-                      </h3>
-
-                      <p className="mt-4 text-zinc-300">
-                        {project.description}
-                      </p>
-                    </motion.div>
-                  )
-                )}
-              </div>
+              <div className="grid md:grid-cols-2 gap-8">
+  {data.projects?.map((project: any, index: number) => (
+    <ProjectCard
+      key={index}
+      project={project}
+    />
+  ))}
+</div>
             </div>
 
             {/* EDUCATION */}

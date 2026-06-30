@@ -4,6 +4,9 @@ import { motion } from "framer-motion";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import ParticleBackground from "@/components/ParticleBackground";
 import HeroTyping from "@/components/HeroTyping";
+import BootLoader from "@/components/BootLoader";
+import MouseGlow from "@/components/MouseGlow";
+import FloatingOrbs from "@/components/FloatingOrbs"; 
 export default function AITheme({
   data,
   views,
@@ -12,7 +15,11 @@ export default function AITheme({
   views: number;
 }) {
   return (
-    <main className="min-h-screen bg-black text-white overflow-hidden">
+   <BootLoader>
+    <FloatingOrbs />
+<MouseGlow />
+
+<main className="relative min-h-screen bg-black text-white overflow-hidden z-10">
       <ParticleBackground />
 
       {/* HERO */}
@@ -264,5 +271,6 @@ export default function AITheme({
       </section>
 
     </main>
+    </BootLoader>
   );
 }

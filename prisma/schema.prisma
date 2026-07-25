@@ -16,6 +16,7 @@ model User {
   accounts   Account[]
   portfolios Portfolio[]
   sessions   Session[]
+  resumes Resume[]
 }
 
 model Portfolio {
@@ -75,4 +76,30 @@ model PortfolioView {
   portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
 
   @@index([portfolioId])
+}
+model Resume {
+  id            String   @id @default(cuid())
+  filename      String
+  originalName  String
+  fileType      String
+  fileSize      Int
+  filePath      String
+
+  extractedText String?
+  parsedData    Json?
+
+  status        ResumeStatus @default(UPLOADED)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId        String
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ResumeStatus {
+  UPLOADED
+  PARSING
+  PARSED
+  FAILED
 }

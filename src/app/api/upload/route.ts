@@ -5,8 +5,11 @@ import { randomUUID } from "crypto";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { parseResume } from "@/lib/parser/resume-parser";
 
 export async function POST(request: NextRequest) {
+  let resumeId: string | undefined;
+
   try {
     // Check authentication
     const session = await auth();
@@ -82,14 +85,12 @@ export async function POST(request: NextRequest) {
 
     const filepath = path.join(uploadDir, filename);
 
-    // Save file
+    // Read uploaded file and save it.
     const bytes = await file.arrayBuffer();
-
     const buffer = Buffer.from(bytes);
-
     await writeFile(filepath, buffer);
 
-    // Save metadata to database
+    // Create the initial database record.
     const resume = await prisma.resume.create({
       data: {
         filename,
@@ -101,21 +102,65 @@ export async function POST(request: NextRequest) {
         userId: user.id,
       },
     });
+    resumeId = resume.id;
+
+    console.info(`[upload] Resume ${resumeId} saved; starting parsing`);
+
+    // Persist the in-progress state before any parser work starts.
+    await prisma.resume.update({
+      where: { id: resume.id },
+      data: { status: "PARSING" },
+    });
+
+    const extractedText = await parseResume(buffer, file.type);
+
+    console.info(
+      `[upload] Resume ${resumeId} parsed successfully (${extractedText.length} characters)`
+    );
+
+    const updatedResume = await prisma.resume.update({
+      where: { id: resume.id },
+      data: {
+        extractedText,
+        status: "PARSED",
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      resume,
+      message: "Resume uploaded and parsed successfully.",
+      resume: updatedResume,
     });
 
   } catch (error) {
-    console.error(error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(
+      `[upload] Resume upload/parsing failed${resumeId ? ` for ${resumeId}` : ""}:`,
+      error
+    );
+
+    if (resumeId) {
+      try {
+        await prisma.resume.update({
+          where: { id: resumeId },
+          data: { status: "FAILED" },
+        });
+        console.info(`[upload] Resume ${resumeId} marked as FAILED`);
+      } catch (statusError) {
+        console.error(
+          `[upload] Could not mark Resume ${resumeId} as FAILED:`,
+          statusError
+        );
+      }
+    }
 
     return NextResponse.json(
       {
-        error: "Internal Server Error",
+        error: message || "Resume upload or parsing failed.",
+        resumeId,
       },
       {
-        status: 500,
+        status: 422,
       }
     );
   }

@@ -95,7 +95,7 @@ return (
         <div className="flex flex-wrap gap-4 mt-8">
 
           <Link
-            href="/dashboard/generate"
+           href="/dashboard/upload"
             className="px-6 py-3 rounded-xl bg-white text-black font-semibold hover:scale-105 transition"
           >
             Generate Portfolio

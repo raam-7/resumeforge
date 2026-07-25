@@ -1,56 +1,122 @@
-import { NextResponse } from "next/server";
-import { extractResumeText } from "@/lib/resume/extract";
+import { NextRequest, NextResponse } from "next/server";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
+import { randomUUID } from "crypto";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
-const ALLOWED_TYPES = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session.user.email,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    // Read uploaded file
     const formData = await request.formData();
 
-    const file = formData.get("file");
+    const file = formData.get("file") as File | null;
 
-    if (!file || !(file instanceof File)) {
+    if (!file) {
       return NextResponse.json(
         { error: "No file uploaded" },
         { status: 400 }
       );
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // Validate type
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "Only PDF and DOCX files are allowed" },
+        { error: "Only PDF and Word files are allowed." },
         { status: 400 }
       );
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    // Validate size (10 MB)
+    if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "File exceeds 5 MB limit" },
+        { error: "Maximum file size is 10MB." },
         { status: 400 }
       );
     }
 
-    const text = await extractResumeText(file);
+    // Create uploads directory
+    const uploadDir = path.join(
+      process.cwd(),
+      "uploads",
+      "resumes"
+    );
+
+    await mkdir(uploadDir, { recursive: true });
+
+    // Generate filename
+    const extension = path.extname(file.name);
+
+    const filename = `${randomUUID()}${extension}`;
+
+    const filepath = path.join(uploadDir, filename);
+
+    // Save file
+    const bytes = await file.arrayBuffer();
+
+    const buffer = Buffer.from(bytes);
+
+    await writeFile(filepath, buffer);
+
+    // Save metadata to database
+    const resume = await prisma.resume.create({
+      data: {
+        filename,
+        originalName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        filePath: filepath,
+        status: "UPLOADED",
+        userId: user.id,
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      fileName: file.name,
-      extractedCharacters: text.length,
-      preview: text.slice(0, 500),
+      resume,
     });
+
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
       {
-        error: "Failed to extract resume text",
+        error: "Internal Server Error",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

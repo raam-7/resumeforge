@@ -10,25 +10,25 @@ datasource db {
 model User {
   id         String      @id @default(cuid())
   email      String      @unique
-  password   String
   name       String?
   createdAt  DateTime    @default(now())
+  password   String
   accounts   Account[]
   portfolios Portfolio[]
+  resumes    Resume[]
   sessions   Session[]
-  resumes Resume[]
 }
 
 model Portfolio {
   id        String          @id @default(cuid())
   title     String
   slug      String          @unique
-  template  String          @default("developer")
   data      Json
   published Boolean         @default(false)
   userId    String
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
+  template  String          @default("developer")
   user      User            @relation(fields: [userId], references: [id])
   views     PortfolioView[]
 
@@ -77,24 +77,21 @@ model PortfolioView {
 
   @@index([portfolioId])
 }
+
 model Resume {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   filename      String
   originalName  String
   fileType      String
   fileSize      Int
   filePath      String
-
   extractedText String?
   parsedData    Json?
-
   status        ResumeStatus @default(UPLOADED)
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   userId        String
-  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum ResumeStatus {

@@ -1,31 +1,50 @@
-import { PDFParse } from "pdf-parse";
+import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 
-export async function extractResumeText(file: File) {
-  const buffer = Buffer.from(await file.arrayBuffer());
+export async function extractResumeText(
+  file: File
+): Promise<string> {
+  const buffer = Buffer.from(
+    await file.arrayBuffer()
+  );
 
+  // PDF
   if (file.type === "application/pdf") {
-    const parser = new PDFParse({ data: buffer });
+    const result = await pdfParse(buffer);
 
-    try {
-      const pdf = await parser.getText();
+    const text = result.text?.trim() || "";
 
-      return pdf.text;
-    } finally {
-      await parser.destroy();
+    if (!text) {
+      throw new Error(
+        "No text could be extracted from the PDF."
+      );
     }
+
+    return text;
   }
 
+  // DOCX
   if (
     file.type ===
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
-    const result = await mammoth.extractRawText({
-      buffer,
-    });
+    const result =
+      await mammoth.extractRawText({
+        buffer,
+      });
 
-    return result.value;
+    const text = result.value?.trim() || "";
+
+    if (!text) {
+      throw new Error(
+        "No text could be extracted from the DOCX file."
+      );
+    }
+
+    return text;
   }
 
-  throw new Error("Unsupported file type");
+  throw new Error(
+    "Unsupported resume format. Please upload a PDF or DOCX file."
+  );
 }

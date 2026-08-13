@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { readFile } from "fs/promises";
+import { parseResumeWithAI } from "@/lib/ai/resume-ai";
 
-import { extractResumeText } from "@/lib/resume/extract";
-
-export async function POST(request: Request) {
+export async function POST() {
   try {
     // -----------------------------------------
-    // 1. Check authentication
+    // 1. Check logged-in user
     // -----------------------------------------
 
     const session = await auth();
@@ -24,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     // -----------------------------------------
-    // 2. Find current user
+    // 2. Find logged-in user
     // -----------------------------------------
 
     const user = await prisma.user.findUnique({
@@ -44,47 +42,35 @@ export async function POST(request: Request) {
     }
 
     // -----------------------------------------
-    // 3. Get resume ID
-    // -----------------------------------------
-
-    const body = await request.json();
-
-    const resumeId = body.resumeId;
-
-    if (!resumeId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "resumeId is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // -----------------------------------------
-    // 4. Find ONLY this user's resume
+    // 3. Find ONLY this user's latest parsed resume
     // -----------------------------------------
 
     const resume = await prisma.resume.findFirst({
       where: {
-        id: resumeId,
         userId: user.id,
+        status: "PARSED",
+        extractedText: {
+          not: null,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
-    if (!resume) {
+    if (!resume || !resume.extractedText) {
       return NextResponse.json(
         {
           success: false,
           error:
-            "Resume not found or does not belong to the current user.",
+            "No parsed resume found for the current user.",
         },
         { status: 404 }
       );
     }
 
     // -----------------------------------------
-    // 5. Mark as parsing
+    // 4. Mark as AI parsing
     // -----------------------------------------
 
     await prisma.resume.update({
@@ -92,46 +78,22 @@ export async function POST(request: Request) {
         id: resume.id,
       },
       data: {
-        status: "PARSING",
+        status: "AI_PARSING",
       },
     });
 
     try {
       // -----------------------------------------
-      // 6. Read uploaded file
+      // 5. Send THIS USER'S resume to Qwen
       // -----------------------------------------
 
-      const buffer = await readFile(
-        resume.filePath
-      );
-
-      // -----------------------------------------
-      // 7. Convert buffer into File
-      // -----------------------------------------
-
-      const file = new File(
-        [buffer],
-        resume.originalName,
-        {
-          type: resume.fileType,
-        }
-      );
-
-      // -----------------------------------------
-      // 8. Extract resume text
-      // -----------------------------------------
-
-      const resumeText =
-        await extractResumeText(file);
-
-      if (!resumeText.trim()) {
-        throw new Error(
-          "No text could be extracted from the resume."
+      const parsedResume =
+        await parseResumeWithAI(
+          resume.extractedText
         );
-      }
 
       // -----------------------------------------
-      // 9. Save extracted text
+      // 6. Save AI result
       // -----------------------------------------
 
       const updatedResume =
@@ -140,25 +102,35 @@ export async function POST(request: Request) {
             id: resume.id,
           },
           data: {
-            extractedText: resumeText,
-            status: "PARSED",
+            parsedData: parsedResume,
+            status: "AI_PARSED",
           },
         });
 
       return NextResponse.json({
         success: true,
-        message: "Resume parsed successfully.",
+        message:
+          "Resume parsed successfully with AI.",
+
         resumeId: updatedResume.id,
+
         userId: user.id,
+
         status: updatedResume.status,
-        extractedTextLength:
-          resumeText.length,
+
+        parsedResume:
+          updatedResume.parsedData,
       });
-    } catch (parseError) {
+
+    } catch (aiError) {
       console.error(
-        "Resume extraction failed:",
-        parseError
+        "AI resume parsing failed:",
+        aiError
       );
+
+      // -----------------------------------------
+      // 7. Mark this resume as failed
+      // -----------------------------------------
 
       await prisma.resume.update({
         where: {
@@ -173,16 +145,17 @@ export async function POST(request: Request) {
         {
           success: false,
           error:
-            parseError instanceof Error
-              ? parseError.message
-              : "Resume extraction failed.",
+            aiError instanceof Error
+              ? aiError.message
+              : "AI resume parsing failed.",
         },
         { status: 500 }
       );
     }
+
   } catch (error) {
     console.error(
-      "Parse resume API error:",
+      "Parse resume AI API failed:",
       error
     );
 

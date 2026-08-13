@@ -98,5 +98,7 @@ enum ResumeStatus {
   UPLOADED
   PARSING
   PARSED
+  AI_PARSING
+  AI_PARSED
   FAILED
 }

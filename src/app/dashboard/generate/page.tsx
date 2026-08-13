@@ -15,15 +15,18 @@ export default function GeneratePage() {
     setResult("");
 
     try {
-      const response = await fetch("/api/generate-portfolio", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          template,
-        }),
-      });
+   const response = await fetch(
+  "/api/generate-portfolio",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      template,
+    }),
+  }
+);
 
       const data = await response.json();
 

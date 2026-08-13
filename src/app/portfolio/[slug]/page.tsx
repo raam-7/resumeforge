@@ -1,14 +1,33 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import HeroTyping from "@/components/HeroTyping";
 
 type Personal = {
+  fullName?: string | null;
   name?: string | null;
   email?: string | null;
   phone?: string | null;
   location?: string | null;
   linkedin?: string | null;
+  linkedIn?: string | null;
   github?: string | null;
+  website?: string | null;
 };
+
+type ProfessionalProfile = {
+  title?: string | null;
+  domain?: string | null;
+  specializations?: string[];
+  seniority?: string | null;
+  evidence?: string[];
+};
+
+type Skill =
+  | string
+  | {
+      name?: string | null;
+      category?: string | null;
+    };
 
 type Education = {
   degree?: string | null;
@@ -33,12 +52,21 @@ type Project = {
   description?: string[];
   technologies?: string[];
   url?: string | null;
+  githubUrl?: string | null;
+  liveUrl?: string | null;
 };
 
 type ResumeData = {
+  professionalProfile?: ProfessionalProfile;
+
+  // New structure
+  personalInfo?: Personal;
+
+  // Backward compatibility
   personal?: Personal;
+
   summary?: string | null;
-  skills?: string[];
+  skills?: Skill[];
   education?: Education[];
   experience?: Experience[];
   projects?: Project[];
@@ -46,6 +74,11 @@ type ResumeData = {
   achievements?: string[];
   languages?: string[];
   interests?: string[];
+
+  socialLinks?: {
+    platform?: string;
+    url?: string;
+  }[];
 };
 
 type PageProps = {
@@ -71,7 +104,51 @@ export default async function PortfolioPage({
 
   const data = portfolio.data as ResumeData;
 
-  const personal = data.personal ?? {};
+  /*
+   * --------------------------------------------------
+   * PERSONAL INFORMATION
+   * --------------------------------------------------
+   *
+   * New portfolios use:
+   * data.personalInfo
+   *
+   * Older portfolios may use:
+   * data.personal
+   *
+   * We support both.
+   */
+
+  const personal =
+    data.personalInfo ??
+    data.personal ??
+    {};
+
+  const personalInfo =
+    data.personalInfo ??
+    data.personal ??
+    {};
+
+  /*
+   * --------------------------------------------------
+   * PROFESSIONAL PROFILE
+   * --------------------------------------------------
+   */
+
+  const professionalProfile =
+    data.professionalProfile ?? {};
+
+  const professionalTitle =
+    professionalProfile.title ||
+    "Professional";
+
+  const professionalDomain =
+    professionalProfile.domain || "";
+
+  /*
+   * --------------------------------------------------
+   * NORMALIZE ARRAY DATA
+   * --------------------------------------------------
+   */
 
   const skills = Array.isArray(data.skills)
     ? data.skills
@@ -109,6 +186,17 @@ export default async function PortfolioPage({
     ? data.interests
     : [];
 
+  /*
+   * --------------------------------------------------
+   * CANDIDATE NAME
+   * --------------------------------------------------
+   */
+
+  const candidateName =
+    personalInfo.fullName ||
+    personalInfo.name ||
+    "My Portfolio";
+
   return (
     <main className="min-h-screen bg-black text-white">
 
@@ -128,14 +216,43 @@ export default async function PortfolioPage({
             </p>
 
             <h1 className="text-5xl font-extrabold tracking-tight md:text-7xl">
-              {personal.name || "My Portfolio"}
+              {candidateName}
             </h1>
 
-            <p className="mt-6 text-xl font-medium text-zinc-300 md:text-2xl">
-              Software Engineer • Full Stack Developer • AI Enthusiast
-            </p>
+            <div className="mt-6">
+
+              <p className="text-xl font-medium text-zinc-300 md:text-2xl">
+                {professionalTitle}
+              </p>
+
+              {professionalDomain && (
+                <p className="mt-2 text-base text-cyan-400 md:text-lg">
+                  {professionalDomain}
+                </p>
+              )}
+
+              {professionalProfile.specializations &&
+                professionalProfile.specializations.length > 0 && (
+                  <div className="mt-5 flex flex-wrap gap-2">
+
+                    {professionalProfile.specializations
+                      .slice(0, 5)
+                      .map((specialization, index) => (
+                        <span
+                          key={`${specialization}-${index}`}
+                          className="rounded-full border border-cyan-500/20 bg-cyan-500/5 px-4 py-2 text-sm text-zinc-300"
+                        >
+                          {specialization}
+                        </span>
+                      ))}
+
+                  </div>
+                )}
+
+            </div>
 
             {/* Contact information */}
+
             <div className="mt-8 flex flex-wrap gap-3">
 
               {personal.email && (
@@ -165,11 +282,17 @@ export default async function PortfolioPage({
             </div>
 
             {/* Social links */}
+
             <div className="mt-6 flex gap-4">
 
-              {personal.linkedin && (
+              {(personal.linkedin ||
+                personal.linkedIn) && (
                 <a
-                  href={personal.linkedin}
+                  href={
+                    personal.linkedin ||
+                    personal.linkedIn ||
+                    ""
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-xl bg-white px-5 py-3 font-semibold text-black transition hover:bg-cyan-400"
@@ -192,7 +315,9 @@ export default async function PortfolioPage({
             </div>
 
           </div>
+
         </div>
+
       </section>
 
       {/* ================= MAIN ================= */}
@@ -238,14 +363,26 @@ export default async function PortfolioPage({
 
             <div className="mt-8 flex flex-wrap gap-3">
 
-              {skills.map((skill, index) => (
-                <span
-                  key={`${skill}-${index}`}
-                  className="rounded-full border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 px-5 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-cyan-400 hover:text-cyan-400"
-                >
-                  {skill}
-                </span>
-              ))}
+              {skills.map((skill, index) => {
+
+                const skillName =
+                  typeof skill === "string"
+                    ? skill
+                    : skill?.name || "";
+
+                if (!skillName) {
+                  return null;
+                }
+
+                return (
+                  <span
+                    key={`${skillName}-${index}`}
+                    className="rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-300"
+                  >
+                    {skillName}
+                  </span>
+                );
+              })}
 
             </div>
 
@@ -278,12 +415,15 @@ export default async function PortfolioPage({
                     <div>
 
                       <h3 className="text-2xl font-bold">
-                        {item.role || "Professional Role"}
+                        {item.role ||
+                          "Professional Role"}
                       </h3>
 
-                      <p className="mt-1 text-lg text-cyan-400">
-                        {item.company}
-                      </p>
+                      {item.company && (
+                        <p className="mt-1 text-lg text-cyan-400">
+                          {item.company}
+                        </p>
+                      )}
 
                       {item.location && (
                         <p className="mt-1 text-sm text-zinc-500">
@@ -307,6 +447,7 @@ export default async function PortfolioPage({
                   {item.description &&
                     item.description.length > 0 && (
                       <ul className="mt-6 space-y-3">
+
                         {item.description.map(
                           (description, i) => (
                             <li
@@ -321,6 +462,7 @@ export default async function PortfolioPage({
                             </li>
                           )
                         )}
+
                       </ul>
                     )}
 
@@ -447,9 +589,11 @@ export default async function PortfolioPage({
                           "Education"}
                       </h3>
 
-                      <p className="mt-2 text-cyan-400">
-                        {item.institution}
-                      </p>
+                      {item.institution && (
+                        <p className="mt-2 text-cyan-400">
+                          {item.institution}
+                        </p>
+                      )}
 
                       {item.location && (
                         <p className="mt-1 text-sm text-zinc-500">
@@ -552,6 +696,7 @@ export default async function PortfolioPage({
                     key={`${achievement}-${index}`}
                     className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6"
                   >
+
                     <div className="flex gap-4">
 
                       <span className="text-xl">
@@ -563,6 +708,7 @@ export default async function PortfolioPage({
                       </p>
 
                     </div>
+
                   </div>
                 )
               )}
@@ -581,6 +727,7 @@ export default async function PortfolioPage({
             <div className="grid gap-6 md:grid-cols-2">
 
               {/* Languages */}
+
               {languages.length > 0 && (
                 <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-7">
 
@@ -607,6 +754,7 @@ export default async function PortfolioPage({
               )}
 
               {/* Interests */}
+
               {interests.length > 0 && (
                 <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-7">
 
@@ -647,7 +795,9 @@ export default async function PortfolioPage({
 
           <p>
             © {new Date().getFullYear()}{" "}
-            {personal.name || "Portfolio"}
+            {personal.fullName ||
+              personal.name ||
+              "Portfolio"}
           </p>
 
           <p>

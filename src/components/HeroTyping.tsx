@@ -2,19 +2,30 @@
 
 import { TypeAnimation } from "react-type-animation";
 
-export default function HeroTyping() {
+type HeroTypingProps = {
+  items?: string[];
+};
+
+export default function HeroTyping({
+  items = [],
+}: HeroTypingProps) {
+  const validItems = items.filter(
+    (item) =>
+      typeof item === "string" &&
+      item.trim().length > 0
+  );
+
+  const sequence: (string | number)[] =
+    validItems.length > 0
+      ? validItems.flatMap((item) => [
+          item,
+          2000,
+        ])
+      : ["Professional", 2000];
+
   return (
     <TypeAnimation
-      sequence={[
-        "AI Engineer",
-        2000,
-        "Full Stack Developer",
-        2000,
-        "MERN Stack Developer",
-        2000,
-        "Machine Learning Enthusiast",
-        2000,
-      ]}
+      sequence={sequence}
       wrapper="span"
       speed={50}
       repeat={Infinity}

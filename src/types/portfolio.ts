@@ -52,6 +52,8 @@ export interface PersonalInfo {
 }
 
 export interface PortfolioData {
+
+  professionalProfile: ProfessionalProfile;
   personalInfo: PersonalInfo;
 
   summary: string;
@@ -67,4 +69,14 @@ export interface PortfolioData {
   certifications: Certification[];
 
   socialLinks: SocialLink[];
+
+  
 }
+
+export type ProfessionalProfile = {
+  title: string;
+  domain: string;
+  specializations: string[];
+  seniority: string;
+  evidence: string[];
+};

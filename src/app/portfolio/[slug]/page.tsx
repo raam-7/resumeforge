@@ -8,7 +8,7 @@ type PageProps = { params: Promise<{ slug: string }> };
 
 export default async function PortfolioPage({ params }: PageProps) {
   const { slug } = await params;
-  const portfolio = await prisma.portfolio.findUnique({ where: { slug } });
+  const portfolio = await prisma.portfolio.findFirst({ where: { slug, published: true } });
   if (!portfolio) notFound();
   return <><VisitorTracker slug={slug} /><PortfolioRenderer template={portfolio.template} data={portfolio.data as unknown as ThemeData} /></>;
 }

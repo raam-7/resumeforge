@@ -25,7 +25,7 @@ export async function GET(_: Request, { params }: RouteContext) {
     const user = await currentUser();
     if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     const { id } = await params;
-    const portfolio = await prisma.portfolio.findFirst({ where: { id, userId: user.id }, select: { id: true, title: true, slug: true, template: true, data: true } });
+    const portfolio = await prisma.portfolio.findFirst({ where: { id, userId: user.id }, select: { id: true, title: true, slug: true, template: true, published: true, data: true } });
     if (!portfolio) return NextResponse.json({ success: false, error: "Portfolio not found." }, { status: 404 });
     return NextResponse.json({ success: true, portfolio: { ...portfolio, data: portfolio.data as RawPortfolioData } });
   } catch (error) {
@@ -141,6 +141,8 @@ export async function PUT(
     // 7. Update portfolio
     // --------------------------------------------
 
+    const published = typeof body.published === "boolean" ? body.published : portfolio.published;
+
     const updatedPortfolio =
       await prisma.portfolio.update({
         where: {
@@ -151,6 +153,7 @@ export async function PUT(
             JSON.stringify(portfolioData)
           ),
           template,
+          published,
         },
       });
 
@@ -168,6 +171,7 @@ export async function PUT(
         slug: updatedPortfolio.slug,
         template:
           updatedPortfolio.template,
+        published: updatedPortfolio.published,
       },
     });
   } catch (error) {

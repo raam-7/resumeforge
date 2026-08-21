@@ -1,4 +1,6 @@
 import type {
+  Achievement,
+  Certification,
   Education,
   Experience,
   PersonalInfo,
@@ -56,9 +58,9 @@ export type ThemeData = {
     }
   >;
 
-  certifications?: string[];
+  certifications?: Array<Partial<Certification> | string>;
 
-  achievements?: string[];
+  achievements?: Array<Partial<Achievement> | string>;
 
   languages?: string[];
 

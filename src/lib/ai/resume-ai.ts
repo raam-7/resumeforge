@@ -162,7 +162,7 @@ const cleaned = response.trim();
     const parsed = JSON.parse(cleaned) as ParsedResume;
 
     return parsed;
-  } catch (error) {
+  } catch  {
     console.error("AI JSON parsing failed.");
     console.error("Cleaned response:", cleaned);
 

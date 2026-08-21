@@ -5,6 +5,27 @@ import { prisma } from "@/lib/prisma";
 import { parseResumeWithOllama } from "@/lib/ollama/parser";
 import { validatePortfolioData } from "@/lib/ollama/validate";
 import { repairPortfolioData } from "@/lib/ollama/repair";
+import type { RawPortfolioData } from "@/types/portfolio";
+
+const VALID_TEMPLATES = [
+  "developer",
+  "modern",
+  "corporate",
+  "ai",
+] as const;
+
+type PortfolioTemplate =
+  (typeof VALID_TEMPLATES)[number];
+
+function isRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -28,11 +49,12 @@ export async function POST(request: Request) {
     // 2. Find logged-in user
     // --------------------------------------------------
 
-    const user = await prisma.user.findUnique({
-      where: {
-        email: session.user.email,
-      },
-    });
+    const user =
+      await prisma.user.findUnique({
+        where: {
+          email: session.user.email,
+        },
+      });
 
     if (!user) {
       return NextResponse.json(
@@ -45,23 +67,32 @@ export async function POST(request: Request) {
     }
 
     // --------------------------------------------------
-    // 3. Read template from request
+    // 3. Read and validate template
     // --------------------------------------------------
 
-    let template = "developer";
+    let template: PortfolioTemplate =
+      "developer";
 
     try {
-      const body = await request.json();
+      const body: unknown =
+        await request.json();
 
-      if (
-        body &&
-        typeof body.template === "string" &&
-        body.template.trim()
-      ) {
-        template = body.template.trim();
+      if (isRecord(body)) {
+        const requestedTemplate =
+          body.template;
+
+        if (
+          typeof requestedTemplate ===
+            "string" &&
+          VALID_TEMPLATES.includes(
+            requestedTemplate as PortfolioTemplate
+          )
+        ) {
+          template =
+            requestedTemplate as PortfolioTemplate;
+        }
       }
     } catch {
-      // Request may have no JSON body.
       // Keep developer as fallback.
     }
 
@@ -69,17 +100,18 @@ export async function POST(request: Request) {
     // 4. Find latest resume belonging to THIS user
     // --------------------------------------------------
 
-    const resume = await prisma.resume.findFirst({
-      where: {
-        userId: user.id,
-        parsedData: {
-          not: Prisma.JsonNull,
+    const resume =
+      await prisma.resume.findFirst({
+        where: {
+          userId: user.id,
+          parsedData: {
+            not: Prisma.JsonNull,
+          },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
     if (!resume) {
       return NextResponse.json(
@@ -96,23 +128,23 @@ export async function POST(request: Request) {
     // 5. Get existing parsed data
     // --------------------------------------------------
 
-    let parsedData =
-      (resume.parsedData as Record<string, any>) || {};
+    let parsedData: RawPortfolioData =
+      isRecord(resume.parsedData)
+        ? (resume.parsedData as RawPortfolioData)
+        : {};
 
     // --------------------------------------------------
     // 6. Ensure professionalProfile exists
-    //
-    // If an older resume was parsed before we introduced
-    // professionalProfile, re-run the AI parser using the
-    // extracted resume text.
     // --------------------------------------------------
 
+    const professionalProfile =
+      parsedData.professionalProfile;
+
     const hasProfessionalProfile =
-      parsedData.professionalProfile &&
-      typeof parsedData.professionalProfile === "object" &&
-      typeof parsedData.professionalProfile.title ===
+      isRecord(professionalProfile) &&
+      typeof professionalProfile.title ===
         "string" &&
-      parsedData.professionalProfile.title.trim() !== "";
+      professionalProfile.title.trim() !== "";
 
     if (
       !hasProfessionalProfile &&
@@ -132,8 +164,23 @@ export async function POST(request: Request) {
         );
 
       try {
-        parsedData = JSON.parse(aiResponse);
-      } catch (error) {
+        const reparsed: unknown =
+          JSON.parse(aiResponse);
+
+        if (isRecord(reparsed)) {
+          parsedData =
+            reparsed as RawPortfolioData;
+        } else {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                "AI returned invalid resume JSON.",
+            },
+            { status: 500 }
+          );
+        }
+      } catch {
         console.error(
           "[generate-portfolio] Invalid AI JSON:",
           aiResponse
@@ -173,20 +220,43 @@ export async function POST(request: Request) {
 
     // --------------------------------------------------
     // 8. Determine candidate name
-    //
-    // Support both old and new structures.
     // --------------------------------------------------
-const fullName =
-  portfolioData.personalInfo?.fullName?.trim() ||
-  parsedData?.personalInfo?.fullName?.trim?.() ||
-  parsedData?.personalInfo?.full_name?.trim?.() ||
-  parsedData?.personalInfo?.name?.trim?.() ||
-  parsedData?.personalInfo?.candidateName?.trim?.() ||
-  parsedData?.personal?.fullName?.trim?.() ||
-  parsedData?.personal?.full_name?.trim?.() ||
-  parsedData?.personal?.name?.trim?.() ||
-  parsedData?.personal?.candidateName?.trim?.() ||
-  "My Portfolio";
+
+    const personalInfo =
+      isRecord(parsedData.personalInfo)
+        ? parsedData.personalInfo
+        : {};
+
+    const personal =
+      isRecord(parsedData.personal)
+        ? parsedData.personal
+        : {};
+
+    const getString = (
+      value: unknown
+    ): string => {
+      return typeof value === "string"
+        ? value.trim()
+        : "";
+    };
+
+    const fullName =
+      getString(
+        portfolioData.personalInfo?.fullName
+      ) ||
+      getString(personalInfo.fullName) ||
+      getString(personalInfo.full_name) ||
+      getString(personalInfo.name) ||
+      getString(
+        personalInfo.candidateName
+      ) ||
+      getString(personal.fullName) ||
+      getString(personal.full_name) ||
+      getString(personal.name) ||
+      getString(
+        personal.candidateName
+      ) ||
+      "My Portfolio";
 
     // --------------------------------------------------
     // 9. Generate unique slug
@@ -221,10 +291,13 @@ const fullName =
     const portfolio =
       await prisma.portfolio.create({
         data: {
-          title: `${fullName} - Portfolio`,
+          title:
+            `${fullName} - Portfolio`,
           slug,
           template,
-          data: JSON.parse(JSON.stringify(portfolioData)),
+          data: JSON.parse(
+            JSON.stringify(portfolioData)
+          ),
           published: false,
           userId: user.id,
         },
@@ -236,6 +309,7 @@ const fullName =
 
     return NextResponse.json({
       success: true,
+
       message:
         "Portfolio generated successfully.",
 

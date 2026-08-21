@@ -1,4 +1,6 @@
-export function validatePortfolioData(data: any) {
+import type { RawPortfolioData } from "@/types/portfolio";
+
+export function validatePortfolioData(data: RawPortfolioData) {
   const professionalProfile =
     data?.professionalProfile ?? {};
 

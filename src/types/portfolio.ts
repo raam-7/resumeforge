@@ -15,13 +15,13 @@ export interface Experience {
   startDate?: string;
   endDate?: string;
   current?: boolean;
-  description: string[];
+  description: string[] | unknown[];
 }
 
 export interface Project {
   title: string;
-  description: string;
-  technologies: string[];
+  description: string | unknown[];
+  technologies: string[] | unknown[];
   githubUrl?: string;
   liveUrl?: string;
 }
@@ -92,3 +92,21 @@ export type ProfessionalProfile = {
   seniority: string;
   evidence: string[];
 };
+
+export type RawRecord = Record<string, unknown>;
+export interface RawPortfolioData {
+  [key: string]: unknown;
+  professionalProfile?: RawRecord;
+  personalInfo?: RawRecord;
+  personal?: RawRecord;
+  skills?: unknown;
+  projects?: unknown;
+  experience?: unknown;
+  summary?: unknown;
+  education?: unknown;
+  certifications?: unknown;
+  achievements?: unknown;
+  languages?: unknown;
+  interests?: unknown;
+  socialLinks?: unknown;
+}

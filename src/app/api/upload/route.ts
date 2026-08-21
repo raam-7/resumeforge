@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { randomUUID } from "crypto";
+import { UTApi } from "uploadthing/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseResume } from "@/lib/parser/resume-parser";
+
+const utapi = new UTApi();
 
 export async function POST(request: NextRequest) {
   let resumeId: string | undefined;
@@ -50,7 +51,6 @@ export async function POST(request: NextRequest) {
     // Validate type
     const allowedTypes = [
       "application/pdf",
-      "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
 
@@ -69,26 +69,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory
-    const uploadDir = path.join(
-      process.cwd(),
-      "uploads",
-      "resumes"
-    );
-
-    await mkdir(uploadDir, { recursive: true });
-
-    // Generate filename
-    const extension = path.extname(file.name);
-
-    const filename = `${randomUUID()}${extension}`;
-
-    const filepath = path.join(uploadDir, filename);
-
-    // Read uploaded file and save it.
+    // Upload to persistent remote storage. The buffer is only held in memory
+    // for parsing and is never written to the serverless filesystem.
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    const extension = file.name.includes(".")
+      ? `.${file.name.split(".").pop()?.toLowerCase()}`
+      : "";
+    const filename = `${randomUUID()}${extension}`;
+    const uploadedFile = await utapi.uploadFiles(
+      new File([buffer], filename, { type: file.type })
+    );
+
+    if (uploadedFile.error || !uploadedFile.data) {
+      throw new Error("Resume storage upload failed.");
+    }
+
+    const remoteFile = uploadedFile.data;
 
     // Create the initial database record.
     const resume = await prisma.resume.create({
@@ -97,7 +94,7 @@ export async function POST(request: NextRequest) {
         originalName: file.name,
         fileType: file.type,
         fileSize: file.size,
-        filePath: filepath,
+        filePath: remoteFile.ufsUrl,
         status: "UPLOADED",
         userId: user.id,
       },
@@ -130,6 +127,10 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Resume uploaded and parsed successfully.",
       resume: updatedResume,
+      file: {
+        url: remoteFile.ufsUrl,
+        key: remoteFile.key,
+      },
     });
 
   } catch (error) {

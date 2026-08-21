@@ -27,7 +27,6 @@ export default function UploadZone({
       maxSize: 10 * 1024 * 1024,
       accept: {
         "application/pdf": [".pdf"],
-        "application/msword": [".doc"],
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
           [".docx"],
       },
@@ -69,7 +68,7 @@ export default function UploadZone({
 
       <div className="mt-6 flex justify-center gap-2 text-sm text-zinc-500">
         <FileText size={18} />
-        PDF / DOC / DOCX • Max 10 MB
+        PDF / DOCX • Max 10 MB
       </div>
     </div>
   );

@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { readFile } from "fs/promises";
-
-import { extractResumeText } from "@/lib/resume/extract";
+import { parseResume } from "@/lib/parser/resume-parser";
 
 export async function POST(request: Request) {
   try {
@@ -101,28 +99,22 @@ export async function POST(request: Request) {
       // 6. Read uploaded file
       // -----------------------------------------
 
-      const buffer = await readFile(
-        resume.filePath
-      );
+      if (!/^https?:\/\//i.test(resume.filePath)) {
+        throw new Error("Resume file is not stored in remote storage.");
+      }
 
-      // -----------------------------------------
-      // 7. Convert buffer into File
-      // -----------------------------------------
+      const fileResponse = await fetch(resume.filePath);
+      if (!fileResponse.ok) {
+        throw new Error(`Resume download failed (${fileResponse.status}).`);
+      }
 
-      const file = new File(
-        [buffer],
-        resume.originalName,
-        {
-          type: resume.fileType,
-        }
-      );
+      const buffer = Buffer.from(await fileResponse.arrayBuffer());
 
       // -----------------------------------------
       // 8. Extract resume text
       // -----------------------------------------
 
-      const resumeText =
-        await extractResumeText(file);
+      const resumeText = await parseResume(buffer, resume.fileType);
 
       if (!resumeText.trim()) {
         throw new Error(

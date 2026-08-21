@@ -70,12 +70,16 @@ model VerificationToken {
 }
 
 model PortfolioView {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   portfolioId String
-  viewedAt    DateTime  @default(now())
-  portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+  visitorId   String
+  viewedAt    DateTime @default(now())
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
 
   @@index([portfolioId])
+  @@index([visitorId])
+  @@index([portfolioId, visitorId])
 }
 
 model Resume {

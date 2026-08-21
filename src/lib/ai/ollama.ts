@@ -1,10 +1,15 @@
-const OLLAMA_URL = "http://localhost:11434/api/generate";
+const OLLAMA_BASE_URL =
+  process.env.OLLAMA_URL || "http://localhost:11434";
+
 const MODEL = "qwen3:4b";
 
 export async function generateWithOllama(
   prompt: string
 ): Promise<string> {
-  const response = await fetch(OLLAMA_URL, {
+  const ollamaUrl =
+    `${OLLAMA_BASE_URL.replace(/\/$/, "")}/api/generate`;
+
+  const response = await fetch(ollamaUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -14,10 +19,8 @@ export async function generateWithOllama(
       prompt,
       stream: false,
 
-      // Force structured JSON output
       format: "json",
 
-      // Disable Qwen thinking for this extraction task
       think: false,
 
       options: {

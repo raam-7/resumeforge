@@ -2,6 +2,13 @@
 import type { PortfolioData } from "@/types/portfolio";
 
 export const examplePortfolio: PortfolioData = {
+  professionalProfile: {
+    title: "",
+    domain: "",
+    specializations: [],
+    seniority: "",
+    evidence: [],
+  },
   personalInfo: {
     fullName: "Raam Bhanushali",
   },
@@ -13,5 +20,8 @@ export const examplePortfolio: PortfolioData = {
   projects: [],
   education: [],
   certifications: [],
+  achievements: [],
+  languages: [],
+  interests: [],
   socialLinks: [],
 };

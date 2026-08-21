@@ -102,7 +102,7 @@ export async function POST() {
             id: resume.id,
           },
           data: {
-            parsedData: parsedResume,
+            parsedData: JSON.parse(JSON.stringify(parsedResume)),
             status: "AI_PARSED",
           },
         });

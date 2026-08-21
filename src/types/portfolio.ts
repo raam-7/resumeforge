@@ -42,6 +42,12 @@ export interface Certification {
   credentialUrl?: string;
 }
 
+export interface Achievement {
+  title: string;
+  description?: string;
+  date?: string;
+}
+
 export interface PersonalInfo {
   fullName: string;
   headline?: string;
@@ -67,6 +73,12 @@ export interface PortfolioData {
   education: Education[];
 
   certifications: Certification[];
+
+  achievements: Achievement[];
+
+  languages: string[];
+
+  interests: string[];
 
   socialLinks: SocialLink[];
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseResumeWithOllama } from "@/lib/ollama/parser";
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
       where: {
         userId: user.id,
         parsedData: {
-          not: null,
+          not: Prisma.JsonNull,
         },
       },
       orderBy: {
@@ -223,7 +224,7 @@ const fullName =
           title: `${fullName} - Portfolio`,
           slug,
           template,
-          data: portfolioData,
+          data: JSON.parse(JSON.stringify(portfolioData)),
           published: false,
           userId: user.id,
         },

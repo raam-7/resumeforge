@@ -44,6 +44,33 @@ export default async function DashboardPage() {
       },
     });
 
+  /*
+   * Get portfolios belonging only to
+   * the currently logged-in user.
+   */
+  const portfolios =
+    await prisma.portfolio.findMany({
+      where: {
+        userId: user.id,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        template: true,
+        published: true,
+        createdAt: true,
+        _count: {
+          select: {
+            views: true,
+          },
+        },
+      },
+    });
+
   return (
     <main className="min-h-screen bg-black text-white">
 
@@ -102,9 +129,6 @@ export default async function DashboardPage() {
 
           <div className="mt-8 flex flex-wrap gap-4">
 
-            {/* IMPORTANT:
-                New users start from upload.
-            */}
             <Link
               href="/dashboard/upload"
               className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:scale-105"
@@ -187,6 +211,152 @@ export default async function DashboardPage() {
           </div>
 
         </div>
+
+      </section>
+
+      {/* My Portfolios */}
+      <section className="mx-auto max-w-7xl px-8 pb-16">
+
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+
+          <div>
+            <h2 className="text-3xl font-bold">
+              My Portfolios
+            </h2>
+
+            <p className="mt-2 text-zinc-500">
+              Manage, edit, preview, and customize
+              your generated portfolios.
+            </p>
+          </div>
+
+          <Link
+            href="/dashboard/upload"
+            className="mt-4 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-5 py-3 text-sm font-medium text-cyan-300 transition hover:border-cyan-400 hover:bg-cyan-500/20 md:mt-0"
+          >
+            + Create New Portfolio
+          </Link>
+
+        </div>
+
+        {portfolios.length === 0 ? (
+
+          <div className="mt-8 rounded-3xl border border-dashed border-zinc-800 bg-zinc-950 p-12 text-center">
+
+            <h3 className="text-xl font-semibold">
+              No portfolios yet
+            </h3>
+
+            <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
+              Upload your resume and let ResumeForge
+              generate your first AI-powered portfolio.
+            </p>
+
+            <Link
+              href="/dashboard/upload"
+              className="mt-6 inline-block rounded-xl bg-cyan-500 px-6 py-3 font-semibold text-black hover:bg-cyan-400"
+            >
+              Generate Portfolio
+            </Link>
+
+          </div>
+
+        ) : (
+
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+
+            {portfolios.map(
+              (portfolio) => (
+                <article
+                  key={portfolio.id}
+                  className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-zinc-700"
+                >
+
+                  {/* Portfolio header */}
+                  <div className="flex items-start justify-between gap-4">
+
+                    <div className="min-w-0">
+
+                      <h3 className="truncate text-xl font-semibold">
+                        {portfolio.title}
+                      </h3>
+
+                      <p className="mt-2 text-sm text-zinc-500">
+                        /portfolio/
+                        {portfolio.slug}
+                      </p>
+
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+                        portfolio.published
+                          ? "border border-green-500/20 bg-green-500/10 text-green-400"
+                          : "border border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
+                      }`}
+                    >
+                      {portfolio.published
+                        ? "Published"
+                        : "Draft"}
+                    </span>
+
+                  </div>
+
+                  {/* Metadata */}
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+
+                    <div className="rounded-xl border border-zinc-800 bg-black p-4">
+
+                      <p className="text-xs uppercase tracking-wider text-zinc-600">
+                        Theme
+                      </p>
+
+                      <p className="mt-2 font-medium capitalize text-zinc-300">
+                        {portfolio.template}
+                      </p>
+
+                    </div>
+
+                    <div className="rounded-xl border border-zinc-800 bg-black p-4">
+
+                      <p className="text-xs uppercase tracking-wider text-zinc-600">
+                        Views
+                      </p>
+
+                      <p className="mt-2 font-medium text-cyan-400">
+                        {portfolio._count.views}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-6 flex flex-wrap gap-3">
+
+                    <Link
+                      href={`/portfolio/${portfolio.slug}`}
+                      className="rounded-xl border border-zinc-700 px-4 py-2.5 text-sm transition hover:border-cyan-400 hover:text-cyan-300"
+                    >
+                      View Portfolio
+                    </Link>
+
+                    <Link
+                      href={`/dashboard/editor/${portfolio.id}`}
+                      className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-cyan-400"
+                    >
+                      Edit Portfolio
+                    </Link>
+
+                  </div>
+
+                </article>
+              )
+            )}
+
+          </div>
+
+        )}
 
       </section>
 

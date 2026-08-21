@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { parseResumeWithOllama } from "@/lib/ollama/parser";
 import { validatePortfolioData } from "@/lib/ollama/validate";
 import { repairPortfolioData } from "@/lib/ollama/repair";
+import { getPortfolioUrl } from "@/lib/site-url";
 import type { RawPortfolioData } from "@/types/portfolio";
 
 const VALID_TEMPLATES = [
@@ -319,7 +320,7 @@ export async function POST(request: Request) {
         slug: portfolio.slug,
         template: portfolio.template,
         published: portfolio.published,
-        url: `/portfolio/${portfolio.slug}`,
+        url: getPortfolioUrl(portfolio.slug),
       },
 
       professionalProfile:

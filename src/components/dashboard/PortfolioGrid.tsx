@@ -14,6 +14,7 @@ import {
   Search,
   Sparkles,
 } from "lucide-react";
+import { getPortfolioUrl } from "@/lib/site-url";
 
 export type DashboardPortfolio = {
   id: string;
@@ -100,6 +101,6 @@ function PortfolioMenu({ id, slug }: { id: string; slug: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const portfolioHref = `/portfolio/${slug}`;
-  async function handleCopy() { await navigator.clipboard.writeText(`${window.location.origin}${portfolioHref}`); setCopied(true); setTimeout(() => setCopied(false), 1600); }
+  async function handleCopy() { await navigator.clipboard.writeText(getPortfolioUrl(slug)); setCopied(true); setTimeout(() => setCopied(false), 1600); }
   return <div className="relative"><button type="button" aria-label="Portfolio actions" aria-expanded={open} onClick={() => setOpen(!open)} className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 text-zinc-500 transition hover:border-zinc-600 hover:text-zinc-200"><MoreHorizontal className="h-4 w-4" /></button>{open && <div className="absolute bottom-12 right-0 z-10 w-40 rounded-xl border border-zinc-800 bg-zinc-900 p-1.5 shadow-2xl"><Link href={portfolioHref} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800">View Portfolio</Link><Link href={`/dashboard/editor/${id}`} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800">Edit Portfolio</Link><button type="button" onClick={handleCopy} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-zinc-800">{copied ? "Copied" : "Copy Link"}{copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}</button></div>}</div>;
 }

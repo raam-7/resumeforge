@@ -1,4 +1,5 @@
 import { generateWithOllama } from "./ollama";
+import { generateWithHuggingFace } from "./huggingface";
 
 export interface ParsedResume {
   personal: {
@@ -52,21 +53,26 @@ function cleanAIResponse(response: string): string {
   let cleaned = response.trim();
 
   // Remove Qwen thinking/reasoning section.
-  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  cleaned = cleaned
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .trim();
 
-  // Remove Markdown code fences if the model adds them.
+  // Remove Markdown code fences.
   cleaned = cleaned
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
 
-  // Find the JSON object if the model added extra text.
+  // Extract JSON object if extra text exists.
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
 
   if (firstBrace !== -1 && lastBrace !== -1) {
-    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    cleaned = cleaned.substring(
+      firstBrace,
+      lastBrace + 1
+    );
   }
 
   return cleaned;
@@ -151,23 +157,29 @@ RESUME TEXT:
 ${resumeText}
 `;
 
- const response = await generateWithOllama(prompt);
+  // Local → Ollama
+  // Vercel → Hugging Face
+  const response =
+    process.env.VERCEL === "1"
+      ? await generateWithHuggingFace(prompt)
+      : await generateWithOllama(prompt);
 
-console.log("Ollama structured response:");
-console.log(response);
+  console.log("AI structured response:");
+  console.log(response);
 
-const cleaned = response.trim();
+  const cleaned = cleanAIResponse(response);
 
   try {
     const parsed = JSON.parse(cleaned) as ParsedResume;
 
     return parsed;
-  } catch  {
+  } catch (error) {
     console.error("AI JSON parsing failed.");
     console.error("Cleaned response:", cleaned);
+    console.error("Original error:", error);
 
     throw new Error(
-      "Ollama returned invalid JSON."
+      "AI provider returned invalid JSON."
     );
   }
 }

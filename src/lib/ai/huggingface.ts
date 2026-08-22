@@ -16,7 +16,7 @@ export async function generateWithHuggingFace(
   try {
     const response = await client.chatCompletion({
       model: MODEL,
-      provider: "auto",
+      provider: "nscale",
       messages: [
         {
           role: "user",

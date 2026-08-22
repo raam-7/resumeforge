@@ -299,7 +299,7 @@ export async function POST(request: Request) {
           data: JSON.parse(
             JSON.stringify(portfolioData)
           ),
-          published: false,
+          published: true,
           userId: user.id,
         },
       });

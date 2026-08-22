@@ -1,8 +1,13 @@
 import { PORTFOLIO_SYSTEM_PROMPT } from "./prompts";
+import { generateWithHuggingFace } from "@/lib/ai/huggingface";
 
 export async function parseResumeWithOllama(
   resumeText: string
 ) {
+  if (!resumeText.trim()) {
+    throw new Error("Resume text is empty.");
+  }
+
   const prompt = `
 ${PORTFOLIO_SYSTEM_PROMPT}
 
@@ -45,46 +50,62 @@ Resume Text:
 ${resumeText}
 `;
 
-  const response = await fetch(
-    "http://localhost:11434/api/generate",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "qwen3:4b",
-        stream: false,
+  let response: string;
 
-        // Important for structured JSON extraction
-        think: false,
+  // --------------------------------------------------
+  // Production: Hugging Face / Nscale
+  // Local development: Ollama
+  // --------------------------------------------------
 
-        // Ask Ollama for valid JSON
-        format: "json",
+  if (process.env.VERCEL === "1") {
+    console.log(
+      "[portfolio-parser] Using Hugging Face / Nscale"
+    );
 
-        prompt,
-      }),
+    response = await generateWithHuggingFace(prompt);
+  } else {
+    console.log(
+      "[portfolio-parser] Using local Ollama"
+    );
+
+    const ollamaResponse = await fetch(
+      "http://localhost:11434/api/generate",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "qwen3:4b",
+          stream: false,
+          think: false,
+          format: "json",
+          prompt,
+        }),
+      }
+    );
+
+    if (!ollamaResponse.ok) {
+      throw new Error(
+        `Ollama request failed: ${ollamaResponse.status}`
+      );
     }
-  );
 
-  if (!response.ok) {
-    throw new Error(
-      `Ollama request failed: ${response.status}`
+    const result = await ollamaResponse.json();
+
+    console.log(
+      "[ollama] response:",
+      result.response
     );
+
+    if (!result.response) {
+      throw new Error(
+        "Ollama returned an empty response."
+      );
+    }
+
+    response = result.response;
   }
 
-  const result = await response.json();
-
-  console.log(
-    "[ollama] response:",
-    result.response
-  );
-
-  if (!result.response) {
-    throw new Error(
-      "Ollama returned an empty response."
-    );
-  }
-
-  return result.response;
+  return response;
 }

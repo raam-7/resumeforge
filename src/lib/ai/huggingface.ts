@@ -1,6 +1,6 @@
 import { InferenceClient } from "@huggingface/inference";
 
-const MODEL = "Qwen/Qwen3-4B";
+const MODEL = "Qwen/Qwen3-4B-Instruct-2507";
 
 export async function generateWithHuggingFace(
   prompt: string
